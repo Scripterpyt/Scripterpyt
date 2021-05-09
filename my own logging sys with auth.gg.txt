@@ -1,0 +1,124 @@
+import os, sys, datetime, subprocess, hashlib, requests, json, time
+from colorama import Fore
+from tkinter import Tk
+from tkinter.filedialog import askopenfilename
+import tkinter
+from tkinter import messagebox
+
+Tk().withdraw()
+root = tkinter.Tk()
+running = 0
+root.withdraw()
+timecode = datetime.datetime.now().strftime('%H:%M:%S')
+hwid = str(subprocess.check_output('wmic csproduct get uuid')).split('\\r\\n')[1].strip('\\r').strip()
+BUF_SIZE = 65536
+md5 = hashlib.md5()
+clear = lambda: os.system('cls')
+try:
+    with open(sys.argv[0], 'rb') as f:
+        while True:
+            data = f.read(BUF_SIZE)
+            if not data:
+                break
+            md5.update(data)
+except:
+    print("")
+    os._exit(0)
+filehash = md5.hexdigest()
+
+login_status = 0
+register_status = 0
+apikey = "" 
+secret = ""
+aid = ""
+version = "1.0"
+random = "your random code here"
+
+
+def checkcheck():
+    if os.path.isfile("autologging.json"):
+        logging()
+
+    else:
+        register()
+
+
+def register():
+    os.system("cls && title Register Menu")
+    if register_status == 0:
+        token = input(f'{Fore.RED}[{Fore.LIGHTCYAN_EX}+{Fore.RED}]{Fore.GREEN} Please enter the Key: ')
+        username = input(f'{Fore.RED}[{Fore.LIGHTCYAN_EX}+{Fore.RED}]{Fore.GREEN} Please enter your username: ')
+        password = input(f'{Fore.RED}[{Fore.LIGHTCYAN_EX}+{Fore.RED}]{Fore.GREEN} Please enter your password: ')
+        eywatoken = {
+            "key": token,
+            "username": username,
+            "password": password
+        }
+        headers = {"User-Agent": "AuthGG"}
+        data = {
+            "type": "register",
+            "aid": aid,
+            "random": random,
+            'apikey': apikey,
+            "secret": secret,
+            "username": username,
+            "password": password,
+            "token": token,
+            "hwid": hwid
+        }
+        try:
+            with requests.Session() as sess:
+                sess.trust_env = False
+                request_3 = sess.post('https://api.auth.gg/version2/api.php',  verify=False,data=data, headers=headers)
+                response_3 = request_3.text
+                flag3 = (response_3 == request_3.text)
+                if flag3:
+                    if "success" in response_3:
+                        print("\nYou have successfully registered!")
+                        with open('autologging.json', 'w', encoding='utf-8') as autologgingfile:
+                            json.dump(eywatoken, autologgingfile, ensure_ascii=True)
+                        time.sleep(2)
+                        pass
+                    else:
+                        if "invalid_token" in response_3:
+                            print("\n[!] Token invalid or already used")
+                        else:
+                            print("\n[!] Something went wrong!")
+                        time.sleep(2)
+                        os._exit(0)
+                else:
+                    os._exit(0)
+        except:
+            messagebox.showerror("𝕯𝖎𝖆𝖇𝖑𝖔 Logging System", "Something went wrong!")
+            os._exit(0)      
+    else:
+        messagebox.showerror("𝕯𝖎𝖆𝖇𝖑𝖔 Logging System", "Register is not available at this time!")
+        os._exit(0)  
+
+
+def logging():
+    global TheName, ThePassword
+    from AuthGG.client import Client
+    client = Client(api_key="", aid="", application_secret="")
+
+    with open('autologging.json') as config_file:
+        configdata = json.load(config_file)
+
+    TheName = configdata['username']
+    ThePassword = configdata['password']
+
+    try:
+        client.login(TheName, ThePassword)
+        os.system("cls")
+        Logger()
+
+    except:
+        print("")
+        
+def Logger():
+    print("ya")
+    time.sleep(1000)
+    os.system("pause")
+    
+
+checkcheck()
